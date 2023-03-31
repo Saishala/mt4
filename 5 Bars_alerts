@@ -1,0 +1,99 @@
+
+//+------------------------------------------------------------------+
+//|                                                       5 Bars.mq4 |
+//|                      Copyright © 2006, EvgeniX                   |
+//|                      Modified by Metatrader4 coding assistant    |
+//+------------------------------------------------------------------+
+#property copyright "Copyright © 2006, EvgeniX"
+#property link      "EvgeniX"
+
+#property indicator_chart_window
+#property indicator_buffers 2
+#property indicator_color1 Red
+#property indicator_width1 2
+#property indicator_color2 Lime
+#property indicator_width2 2
+
+extern int Bars=5;
+extern bool Arrow=true;
+extern bool SndAlert=true;
+extern bool EmailAlert=false;
+extern bool PushAlert=false;
+extern string AlertTextBuy="5 Bars Alert Buy";
+extern string AlertTextSell="5 Bars Alert Sell";
+extern string EmailTo="";
+extern string EmailSubject="5 Bars Alert";
+extern string EmailBody="5 Bars Alert";
+extern int PushNotificationPeriod=10;
+
+double UpBuffer[];
+double DnBuffer[];
+
+int init()
+{
+   IndicatorBuffers(2);
+   SetIndexBuffer(0,UpBuffer);
+   SetIndexStyle(0,DRAW_ARROW,0,2);
+   SetIndexArrow(0,234);
+   SetIndexBuffer(1,DnBuffer);
+   SetIndexStyle(1,DRAW_ARROW,0,2);
+   SetIndexArrow(1,233);
+
+   return(0);
+}
+
+int deinit()
+{
+   return(0);
+}
+
+int start()
+{
+   int counted_bars=IndicatorCounted();
+   if(counted_bars<0) return(-1);
+   if(counted_bars>0) counted_bars--;
+   int i=0;
+   while(i<Bars && counted_bars>=0)
+     {
+      if(Close[i+1]>Close[i])
+        {
+         UpBuffer[i]=Low[i];
+         DnBuffer[i]=0;
+         if(Arrow) {
+            bool res = ChartSetInteger(0, CHART_ALERT, 1);
+            if (SndAlert) PlaySound("alert.wav");
+            if (EmailAlert) SendMail(EmailTo, EmailSubject, EmailBody);
+            if (PushAlert) SendNotification(AlertTextBuy, PushNotificationPeriod, "");
+         }
+        }
+      else if(Close[i+1]<Close[i])
+        {
+         DnBuffer[i]=High[i];
+         UpBuffer[i]=0;
+         if(Arrow) {
+            bool res = ChartSetInteger(0, CHART_ALERT, 1);
+            if (SndAlert) PlaySound("alert.wav");
+            if (PushAlert) SendNotification(AlertTextSell, PushNotificationPeriod, "");
+         }
+        }
+      counted_bars--;
+      i++;
+     }
+   while(i<Bars)
+     {
+      UpBuffer[i]=0;
+      DnBuffer[i]=0;
+      i++;
+     }
+   if (ExtMapBuffer1[1] != 0.0 && ExtMapBuffer1[0] == 0.0) {
+      if (SndAlert) PlaySound("alert.wav");
+      if (EmailAlert) SendMail(EmailTo, EmailSubject, EmailBody);
+      if (PushAlert) SendNotification(AlertTextBuy, PushNotificationPeriod, "");
+   }
+   if (ExtMapBuffer2[1] != 0.0 && ExtMapBuffer2[0] == 0.0) {
+      if (SndAlert) PlaySound("alert.wav");
+      if (EmailAlert) SendMail(EmailTo, EmailSubject, EmailBody);
+      if (PushAlert) SendNotification(AlertTextSell, PushNotificationPeriod, "");
+   }
+   return(0);
+}
